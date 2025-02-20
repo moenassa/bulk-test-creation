@@ -1,0 +1,39 @@
+import json #To create JSON payload
+import os #To get the right directory in which the excel is
+import openpyxl #r/w in the excel sheet
+import requests #Do the API call
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(base_dir, 'Mexico ATMs.xlsx')
+workbook = openpyxl.load_workbook(file_path)
+sheet = workbook.active
+
+auth_bearer = input("Enter OAuth: ")
+src_aid = input("Enter the account ID: ")
+
+url = "https://api.thousandeyes.com/v6/tests/agent-to-server/new.json?aid=" + str(src_aid)
+headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ' + str(auth_bearer)
+        }
+payload = {}    
+#sheet.max_row+1
+for i in range(2,sheet.max_row+1):
+        payload = json.dumps({
+                    "interval": 120,
+                    "agents": [{"agentId": 1277985},{"agentId": 1278014}],
+                    "testName": str(sheet.cell(row=i,column=1).value) + str(sheet.cell(row=i,column=2).value),
+                    "server": str(sheet.cell(row=i,column=4).value),
+                    "alertsEnabled": 1,
+                    "alertRules": [
+                        {"ruleId": 8188179}
+                    ],
+                    "description": str(sheet.cell(row=i,column=5).value),
+                    "groups":[
+                        {"groupId": 793751}
+                        ]
+            })
+            #print(payload)
+        test_creation_response = requests.request("POST", url, headers=headers, data=payload)
+        print("Test " + str(i+1) + " creation status :" + str(test_creation_response.status_code)) 
